@@ -1,0 +1,67 @@
+<app-nav-bar></app-nav-bar>
+<div class="containers-wrapper">
+  <div class="container">
+    <h2>My Account</h2>
+
+    <form (ngSubmit)="updateUser()">
+      <div class="p-field">
+        <label for="name">Current Name: <b>{{ user?.name }}</b></label>
+        <input type="text" id="name" [(ngModel)]="updatedUser.name" name="name" placeholder="Enter new name" />
+      </div>
+
+      <div class="p-field">
+        <label for="email">Current Email: <b>{{ user?.email }}</b></label>
+        <input type="email" id="email" [(ngModel)]="updatedUser.email" name="email" placeholder="Enter new email" />
+      </div>
+
+      <div class="p-field">
+        <label for="password">New Password:</label>
+        <input type="password" id="password" [(ngModel)]="updatedUser.password" name="password" placeholder="Enter new password" />
+      </div>
+
+      <div class="p-field">
+        <label for="passwordConfirm">Confirm Password:</label>
+        <input type="password" id="passwordConfirm" [(ngModel)]="passwordConfirm" name="passwordConfirm" placeholder="Confirm new password" />
+        <small *ngIf="updatedUser.password && updatedUser.password !== passwordConfirm" class="error-message">
+          Passwords do not match.
+        </small>
+      </div>
+
+      <button type="submit" [disabled]="updatedUser.password && updatedUser.password !== passwordConfirm">
+        Update Profile
+      </button>
+    </form>
+  </div>
+
+  <div class="container">
+    <h3>Manage API Keys</h3>
+
+    <div *ngFor="let model of aiModels" class="api-key-block">
+      <label><b>{{ model.model }}</b></label>
+
+      <input
+        type="password"
+        [ngModel]="apiKeysInput[model.model] || ''"
+        (ngModelChange)="apiKeysInput[model.model] = $event"
+        [name]="'apiKey-' + model.model"
+        placeholder="Enter API key for {{ model.model }}"
+      />
+
+      <button type="button" (click)="submitAPIKey(model.model)">
+        Save Key
+      </button>
+    </div>
+  </div>
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1055;" (click)="$event.stopPropagation()">
+  <ngb-toast
+    *ngIf="showToastFlag"
+    [header]="toastHeader"
+    [className]="'toast bg-light text-dark'"
+    [autohide]="true"
+    [delay]="3000"
+    (hidden)="onToastHidden()"
+  >
+    {{ toastMessage }}
+  </ngb-toast>
+</div>

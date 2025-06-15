@@ -1,0 +1,11 @@
+.history-container {
+  background-color: #f1f1f1;
+  color: black;
+  padding: 1rem; /* Optional: Add padding */
+  border-radius: 4px 4px 0 0;
+  overflow-y: auto; /* Enable vertical scrolling */
+  height: 100%; /* Set the height of the container */
+}
+.chat-button{
+  width: 100%;
+}

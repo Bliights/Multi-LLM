@@ -1,0 +1,126 @@
+stages:
+ - kics
+ - build
+
+kics-scan:
+  stage: kics
+  image:
+    name: checkmarx/kics:v2.1.3-debian
+    entrypoint: [""]
+  script:
+    - mkdir -p results
+    # Do the scan on the Dockerfile (create the artifact)
+    - kics scan -p ./frontend/Dockerfile -o results/result_frontend_${CI_COMMIT_TAG} || true
+    - kics scan -p ./backend-auth/Dockerfile -o results/result_backend-auth_${CI_COMMIT_TAG} || true
+    - kics scan -p ./backend-ai/Dockerfile -o results/result_backend-ai_${CI_COMMIT_TAG} || true
+    - kics scan -p ./api-gateway/Dockerfile -o results/result_api-gateway_${CI_COMMIT_TAG} || true
+  rules:
+    - if: '$CI_COMMIT_TAG' 
+  artifacts:
+    name: kics_result
+    paths:
+      - results
+    when: always
+    expire_in: 1 day
+
+kics-results:
+  stage: kics
+  image:
+    name: checkmarx/kics:v2.1.3-debian
+    entrypoint: [""]
+  needs:
+    - job: kics-scan
+      artifacts: true
+  script:
+    - echo "Display KICS scan..."
+    # Display the KICS results
+    - |
+      for file in results/result_*/results.json; do 
+        service_name=$(basename $(dirname "$file"));
+        echo -e "\n-----------------------------------------------------------------";
+        echo "Results for ${service_name} :";
+        cat "$file";
+      done
+    
+    # Check if severity is HIGH in json
+    - echo -e "\n-----------------------------------------------------------------";
+    - echo "Check vulnerability..."
+    - |
+      for file in results/result_*/results.json; do 
+        service_name=$(basename $(dirname "$file")); 
+        if grep -q '"severity": "HIGH"' "$file"; then 
+          echo "Found HIGH severity issues in $service_name !";
+          exit 1;
+        else 
+          echo "No HIGH severity issues found in $service_name."; 
+        fi
+      done
+    
+  rules:
+    - if: '$CI_COMMIT_TAG'
+
+build-image:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    # Create images
+    - |
+      for service in frontend backend-auth api-gateway backend-ai; do
+        /kaniko/executor \
+        --context "${CI_PROJECT_DIR}/$service" \
+        --dockerfile "${CI_PROJECT_DIR}/$service/Dockerfile" \
+        --destination "blights/project_$service:${CI_COMMIT_TAG}" \
+        --tar-path "$service.tar" \
+        --compressed-caching=false \
+        --no-push;
+      done
+  rules:
+    - if: '$CI_COMMIT_TAG' 
+  artifacts:
+    name: build_image
+    paths:
+      - frontend.tar
+      - backend-auth.tar
+      - backend-ai.tar
+      - api-gateway.tar
+    when: always
+    expire_in: 1 day
+
+trivy-scan:
+  stage: build
+  image:
+    name: aquasec/trivy:0.59.1
+    entrypoint: [""]
+  needs:
+    - job: build-image
+      artifacts: true
+  script:
+    # Scan the image tarball using Trivy
+    - trivy image --input frontend.tar
+    - trivy image --input backend-auth.tar
+    - trivy image --input backend-ai.tar
+    - trivy image --input api-gateway.tar
+  rules:
+    - if: '$CI_COMMIT_TAG'
+
+push-image:
+  stage: build
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  needs:
+    - job: build-image
+      artifacts: true
+    - job: trivy-scan
+  script:
+    # login
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD docker.io
+    # push image
+    - crane push frontend.tar docker.io/${CI_REGISTRY_USER}/project_frontend:${CI_COMMIT_TAG}
+    - crane push backend-auth.tar docker.io/${CI_REGISTRY_USER}/project_backend-auth:${CI_COMMIT_TAG}
+    - crane push backend-ai.tar docker.io/${CI_REGISTRY_USER}/project_backend-ai:${CI_COMMIT_TAG}
+    - crane push api-gateway.tar docker.io/${CI_REGISTRY_USER}/project_api-gateway:${CI_COMMIT_TAG}
+  rules:
+    - if: '$CI_COMMIT_TAG'

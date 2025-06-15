@@ -1,0 +1,27 @@
+<h3 class="p-2 text-center">Select an AI model</h3>
+
+<select [(ngModel)]="model_chosen" class="model-select">
+  <option value="" disabled selected>Choose a model...</option>
+  <option *ngFor="let model of aiModels" [value]="model.model">
+    🤖 {{ model.model }}
+  </option>
+</select>
+
+<h4 class="p-2 text-center">Chat</h4>
+
+<div class="chat-container" #chatContainer>
+  <div *ngFor="let chat of aiChats" class="chat-message">
+    <span *ngIf="chat.sender === 'AI'; else plainText" [innerHTML]="formatMessage(chat.message)"></span>
+    <ng-template #plainText>
+      <span>{{ chat.message }}</span>
+    </ng-template>
+  </div>
+  <div #bottomChat></div>
+</div>
+
+<div class="chat-input">
+  <textarea [(ngModel)]="userMessage" type="text" placeholder="Write your message..." class="input-box" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="5"
+         (keydown.enter)="sendMessage()" ></textarea>
+  <button (click)="sendMessage()" class="send-button"
+          [disabled]="!userMessage.trim() || !model_chosen || isThinking">Send</button>
+</div>

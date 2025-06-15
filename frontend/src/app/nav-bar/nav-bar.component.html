@@ -1,0 +1,7 @@
+<nav class="navbar">
+  <a routerLink="/" class="nav-link"><HomeIcon class="p-1"></HomeIcon>Home</a>
+  <div class="ms-auto d-flex">
+    <button class="btn btn-success" routerLink="/account">Account</button>
+    <button class="btn btn-danger ms-2" (click)="logout()" routerLink="/login">Logout</button>
+  </div>
+</nav>

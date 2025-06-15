@@ -1,0 +1,52 @@
+<form [formGroup]="signUpForm" (ngSubmit)="onSignUp()">
+  <div class="container">
+    <h2>Create Account</h2>
+
+    <div class="p-field">
+      <label for="name">Full Name</label>
+      <input id="name" type="text" formControlName="name" pInputText />
+      <p *ngIf="signUpForm.get('name')?.hasError('required') && signUpForm.get('name')?.touched" class="error-message">
+        Name is required.
+      </p>
+      <p *ngIf="signUpForm.get('name')?.hasError('minlength')" class="error-message">
+        Name must be at least 3 characters.
+      </p>
+    </div>
+
+    <div class="p-field">
+      <label for="email">Email</label>
+      <input id="email" type="text" formControlName="email" pInputText />
+      <p *ngIf="signUpForm.get('email')?.hasError('required') && signUpForm.get('email')?.touched" class="error-message">
+        Email is required.
+      </p>
+      <p *ngIf="signUpForm.get('email')?.hasError('email')" class="error-message">
+        Invalid email format.
+      </p>
+    </div>
+
+    <div class="p-field">
+      <label for="password">Password</label>
+      <input id="password" type="password" formControlName="password" pPassword [feedback]="false" placeholder="Enter your password"/>
+      <p *ngIf="signUpForm.get('password')?.hasError('required') && signUpForm.get('password')?.touched" class="error-message">
+        Password is required.
+      </p>
+      <p *ngIf="signUpForm.get('password')?.hasError('minlength')" class="error-message">
+        Password must be at least 4 characters.
+      </p>
+    </div>
+
+    <div class="p-field">
+      <label for="confirmPassword">Confirm Password</label>
+      <input id="confirmPassword" type="password" formControlName="confirmPassword" pPassword [feedback]="false" placeholder="Confirm your password"/>
+      <p *ngIf="signUpForm.hasError('passwordsMismatch')" class="error-message">
+        Passwords do not match.
+      </p>
+    </div>
+
+    <button pButton type="submit" [disabled]="!signUpForm.valid" label="Sign Up"></button>
+
+    <h6 class="text-center">
+      Already Registered? <a routerLink="/login">Login</a>
+    </h6>
+  </div>
+</form>

@@ -1,0 +1,20 @@
+<form [formGroup]="LoginForm" (ngSubmit)="onLogin()">
+  <div class="container">
+    <h2>Login</h2>
+    <div class="p-fluid">
+      <div class="p-field">
+        <label for="email">Email</label>
+        <input id="email" type="text" formControlName="email" pInputText />
+      </div>
+      <div class="p-field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" pInputText />
+      </div>
+      <button pButton type="submit" label="Log in" [disabled]="!LoginForm.valid"></button>
+      <p *ngIf="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <h6 class="text-center">
+        Not Registered? <a routerLink="/sign-up">Sign up</a>
+      </h6>
+    </div>
+  </div>
+</form>

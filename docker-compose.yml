@@ -1,0 +1,121 @@
+services:
+  db_users:
+    image: postgres:14
+    container_name: db_users
+    restart: always
+    environment:
+      POSTGRES_USER: ${USER_DB_USER_NAME}
+      POSTGRES_PASSWORD: ${USER_DB_USER_PW}
+      POSTGRES_DB: ${USER_DB_NAME}
+      PGPORT: ${USER_DB_PORT}
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+      - ./database/db_users.sql:/docker-entrypoint-initdb.d/db_users.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER_NAME} -d ${USER_DB_NAME}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    networks:
+      - private_auth_network
+  
+  db_messages:
+    image: postgres:14
+    container_name: db_messages
+    restart: always
+    environment:
+      POSTGRES_USER: ${MESSAGE_DB_USER_NAME}
+      POSTGRES_PASSWORD: ${MESSAGE_DB_USER_PW}
+      POSTGRES_DB: ${MESSAGE_DB_NAME}
+      PGPORT: ${MESSAGE_DB_PORT}
+    volumes:
+      - db_messages_data:/var/lib/postgresql/data
+      - ./database/db_messages.sql:/docker-entrypoint-initdb.d/db_messages.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MESSAGE_DB_USER_NAME} -d ${MESSAGE_DB_NAME}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    networks:
+      - private_ai_network
+
+  backend-ai:
+    build:
+      context: ./backend-ai
+      dockerfile: Dockerfile
+    image: backend-ai
+    container_name: backend-ai
+    env_file: ./backend-ai/.env
+    environment:
+      DB_SERV: db_messages
+    depends_on:
+      db_messages:
+        condition: service_healthy
+    networks:
+      - private_ai_network 
+      - public_network 
+  
+  backend-auth:
+    build:
+      context: ./backend-auth
+      dockerfile: Dockerfile
+    image: backend-auth
+    container_name: backend-auth
+    env_file: ./backend-auth/.env
+    environment:
+      DB_SERV: db_users
+    depends_on:
+      db_users:
+        condition: service_healthy
+    networks:
+      - private_auth_network
+      - public_network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: api-gateway
+    container_name: api-gateway
+    env_file: ./api-gateway/.env
+    environment:
+      BACKEND_AUTH_SERV: backend-auth
+      BACKEND_AI_SERV: backend-ai
+    ports:
+      - "4000:4000"
+    depends_on:
+      - backend-auth
+      - backend-ai
+    networks:
+      - public_network
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend
+    container_name: frontend
+    env_file: ./frontend/.env
+    environment:
+      BACKEND_SERV: api-gateway
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "4200:4200"
+    depends_on:
+      - api-gateway
+    volumes:
+      - ./frontend/src:/frontend/src
+    networks:
+      - public_network
+
+volumes:
+  db_users_data:
+  db_messages_data:
+
+networks:
+  public_network:  
+    driver: bridge
+  private_auth_network: 
+    driver: bridge
+  private_ai_network:
+    driver: bridge

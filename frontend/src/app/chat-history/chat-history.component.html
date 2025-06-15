@@ -1,0 +1,14 @@
+<div class="history-container">
+  <h3 class="p-2 text-center">Chat History</h3>
+
+  <div class="text-center">
+    <button class="btn btn-primary" (click)="createNewConversation()">New Conversation</button>
+  </div>
+
+  <div *ngFor="let chat of chatHistory" class="d-flex flex-row p-1 border-bottom">
+    <button class="btn btn-light flex-grow-1 text-start" (click)="openChat(chat.id)" >{{ chat.title }}</button>
+    <button class="btn btn-light p-1" (click)="deleteConversation(chat.id)">
+      <TrashIcon></TrashIcon>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,17 @@
+.d-flex {
+  display: flex;
+  overflow: hidden;
+  height: calc(100vh - 68px);
+}
+
+app-chat-history {
+  width: 20%;
+  overflow-y: auto;
+  height: 100%;
+}
+
+app-chat-zone {
+  width: 80%; /* 4/5 of the page width */
+  overflow-y: auto;
+  height: 100%;
+}
